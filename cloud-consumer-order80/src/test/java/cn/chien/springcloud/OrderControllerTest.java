@@ -1,7 +1,10 @@
 package cn.chien.springcloud;
 
+import cn.chien.springcloud.entities.CommonResult;
 import cn.chien.springcloud.entities.Payment;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,27 +24,26 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 @SpringBootTest
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
-public class PaymentControllerTest {
+public class OrderControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    public void test_create_payment_should_return_ok() throws Exception {
+    public void test_create_and_get_payment_with_restTemplate_should_return_ok() throws Exception {
         Payment payment = new Payment();
-        payment.setSerial("atguigu001");
-        mockMvc.perform(MockMvcRequestBuilders.post("/payment/create").content(JSON.toJSONString(payment)).contentType(MediaType.APPLICATION_JSON))
+        payment.setSerial("rest template test");
+        String content = mockMvc.perform(MockMvcRequestBuilders.post("/order/payment/create")
+                        .content(JSON.toJSONString(payment))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(200L))
-                .andDo(MockMvcResultHandlers.print());
-    }
-
-    @Test
-    public void test_query_payment_by_id_should_return_data() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/payment/{0}", 1L))
+                .andReturn().getResponse().getContentAsString();
+        CommonResult<Payment> createResult = JSONObject.parseObject(content, new TypeReference<CommonResult<Payment>>() { });
+        mockMvc.perform(MockMvcRequestBuilders.get("/order/payment/{0}", createResult.getData().getId()))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(200L))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.serial").value("atguigu001"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.serial").value(createResult.getData().getSerial()))
                 .andDo(MockMvcResultHandlers.print());
     }
 
